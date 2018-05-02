@@ -12,16 +12,35 @@ class QuatroState (game.GameState):
     def __init__(self, initialstate=[None] * 16):
         super().__init__(initialstate)
     
-    def update(self, coord, player):
-        pass
-    
-    def _checkelems(self, state, elems):
-        pass
+    def update(self, coord, pieceType): #change the state of the game by adding a piece to it
+        state = self._state ['visible'] #contains a list of states of all positions on the grid
+        line, column = coord
+        index = 4 * line + column
+        if not (0 <= line <= 3 and 0 <= column <= 3):
+            raise game.InvalidMoveException('The move is outside of the board')
+        if state[index] is not None:
+            raise game.InvalidMoveException('The specified cell is not empty')
+        state[index] = pieceType
+
+    def _checkelems(self, state, elems): #check if a list of elems (e.g. a row or column of the grid) has the same state (piece)
+        return state is not None and (e == state for e in elems)
 
     def winner(self):
-        pass
+        state = self._state ['visible']
+        #check lines and columns for a row
+        for i in range (4):
+            if self._checkelems(state[4 * i], [state[4 * i + e] for e in range(4)]): 
+                return state[4 * i]
+            if self._checkelems(state[i], [state[4 * e + i] for e in range(4)]):
+                return state[i]
+        # Check diagonals
+        if self._checkelems(state[0], [state[5 * e] for e in range(4)]):
+            return state[0]
+        if self._checkelems(state[3], [state[12 - 3 * e] for e in range(4)]):
+            return state[3]
+        return None if state.count(None) == 0 else -1
         
-    def prettyprint(self):
+    def prettyprint(self): #???
         pass 
 
 
