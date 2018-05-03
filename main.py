@@ -12,6 +12,8 @@ class QuatroState (game.GameState):
     def __init__(self, initialstate=[None] * 16):
         super().__init__(initialstate)
     
+    #dans tic tac toe, le joueur qui place caractérise la "pièce" (0 ou 1) ; dans quatro on s'en fout de qui a place, ce qui determine le vainqueur
+    #c est celui qui met la derniere piece => comment faire ???
     def update(self, coord, pieceType): #change the state of the game by adding a piece to it
         state = self._state ['visible'] #contains a list of states of all positions on the grid
         line, column = coord
