@@ -1,75 +1,181 @@
-# main.py
-# Authors: Bernard Tourneur & Jonathan Miel
-# Version: May 2, 2018
+#!/usr/bin/env python3
+# quarto.py
+# Author: Quentin Lurkin; IA edited by Bernard Tourneur & Jonathan Miel
+# Version: March 29, 2018
 
 import argparse
 import socket
 import sys
+import random
+import json
 
 import game
 
-class QuatroState (game.GameState):
-    def __init__(self, initialstate=[None] * 16):
+class QuartoState(game.GameState):
+    '''Class representing a state for the Quarto game.'''
+    def __init__(self, initialstate=None):
+        self.__player = 0
+        random.seed()
+        if initialstate is None:
+            pieces = []
+            for shape in ['round', 'square']:
+                for color in ['dark', 'light']:
+                    for height in ['low', 'high']:
+                        for filling in ['empty', 'full']:
+                            pieces.append({
+                                'shape': shape,
+                                'color': color,
+                                'height': height,
+                                'filling': filling
+                            })
+            initialstate = {
+                'board': [None] * 16,
+                'remainingPieces': pieces,
+                'pieceToPlay': None,
+                'quartoAnnounced': False
+            }
+
         super().__init__(initialstate)
+
+    def setPlayer(self, player):
+        self.__player = player
+
+    def applymove(self, move):
+        #{pos: 8, quarto: true, nextPiece: 2}
+        state = self._state['visible']
+        if state['pieceToPlay'] is not None:
+            try:
+                if state['board'][move['pos']] is not None:
+                    raise game.InvalidMoveException('The position is not free')
+                state['board'][move['pos']] = state['remainingPieces'][state['pieceToPlay']]
+                del(state['remainingPieces'][state['pieceToPlay']])
+            except game.InvalidMoveException as e:
+                raise e
+            except:
+                raise game.InvalidMoveException("Your move should contain a \"pos\" key in range(16)")
+
+        try:
+            state['pieceToPlay'] = move['nextPiece']
+        except:
+            raise game.InvalidMoveException("You must specify the next piece to play")
+
+        if 'quarto' in move:
+            state['quartoAnnounced'] = move['quarto']
+            winner = self.winner()
+            if winner is None or winner == -1:
+                raise game.InvalidMoveException("There is no Quarto !")
+        else:
+            state['quartoAnnounced'] = False
+
     
-    #dans tic tac toe, le joueur qui place caractérise la "pièce" (0 ou 1) ; dans quatro on s'en fout de qui a place, ce qui determine le vainqueur
-    #c est celui qui met la derniere piece => comment faire ???
-    def update(self, coord, pieceType): #change the state of the game by adding a piece to it
-        state = self._state ['visible'] #contains a list of states of all positions on the grid
-        line, column = coord
-        index = 4 * line + column
-        if not (0 <= line <= 3 and 0 <= column <= 3):
-            raise game.InvalidMoveException('The move is outside of the board')
-        if state[index] is not None:
-            raise game.InvalidMoveException('The specified cell is not empty')
-        state[index] = pieceType
-
-    def _checkelems(self, state, elems): #check if a list of elems (e.g. a row or column of the grid) has the same state (piece)
-        return state is not None and (e == state for e in elems)
-
-    def winner(self):
-        state = self._state ['visible']
-        #check lines and columns for a row
-        for i in range (4):
-            if self._checkelems(state[4 * i], [state[4 * i + e] for e in range(4)]): 
-                return state[4 * i]
-            if self._checkelems(state[i], [state[4 * e + i] for e in range(4)]):
-                return state[i]
-        # Check diagonals
-        if self._checkelems(state[0], [state[5 * e] for e in range(4)]):
-            return state[0]
-        if self._checkelems(state[3], [state[12 - 3 * e] for e in range(4)]):
-            return state[3]
-        return None if state.count(None) == 0 else -1
+    def _same(self, feature, elems):
         
-    def prettyprint(self): #???
-        pass 
+        try:
+            elems = list(map(lambda piece: piece[feature], elems))
+        except:
+            return False
+        print('SAME:\nelems: {}\nfeature: {}'.format(elems, feature))
+        return all(e == elems[0] for e in elems)
+
+    def _quarto(self, elems):
+        return self._same('shape', elems) or self._same('color', elems) or self._same('filling', elems) or self._same('height', elems)
+    
+    def winner(self):
+        state = self._state['visible']
+        board = state['board']
+        player = self.__player
+
+        # 00 01 02 03
+        # 04 05 06 07
+        # 08 09 10 11
+        # 12 13 14 15
+
+        if state['quartoAnnounced']:
+            # Check horizontal and vertical lines
+            for i in range(4):
+                if self._quarto([board[4 * i + e] for e in range(4)]):
+                    return player
+                if self._quarto([board[4 * e + i] for e in range(4)]):
+                    return player
+            # Check diagonals
+            if self._quarto([board[5 * e] for e in range(4)]):
+                return player
+            if self._quarto([board[3 + 3 * e] for e in range(4)]):
+                return player
+        return None if board.count(None) == 0 else -1
+    
+    def displayPiece(self, piece):
+        if piece is None:
+            return " " * 6
+        bracket = ('(', ')') if piece['shape'] == "round" else ('[', ']')
+        filling = 'E' if piece['filling'] == 'empty' else 'F'
+        color = 'L' if piece['color'] == 'light' else 'D'
+        format = ' {}{}{}{} ' if piece['height'] == 'low' else '{0}{0}{1}{2}{3}{3}'
+        return format.format(bracket[0], filling, color, bracket[1])
+
+    def prettyprint(self):
+        state = self._state['visible']
+        for row in range(4):
+            print('|', end="")
+            for col in range(4):
+                print(self.displayPiece(state['board'][row*4+col]), end="|")
+            print()
+        
+        
+        print(", ".join([self.displayPiece(piece) for piece in state['remainingPieces']]))
 
 
-class QuatroServer (game.GameServer):
+class QuartoServer(game.GameServer):
+    '''Class representing a server for the Quarto game.'''
     def __init__(self, verbose=False):
-        super().__init__('Quatro', 2, QuatroState(), verbose=verbose)
+        super().__init__('Quarto', 2, QuartoState(), verbose=verbose)
+    
+    def applymove(self, move):
+        try:
+            move = json.loads(move)
+        except:
+            raise game.InvalidMoveException('A valid move must be a valid JSON string')
+        else:
+            self._state.setPlayer(self.currentplayer)
+            self._state.applymove(move)
 
-    def applymove (self, move):
-        pass
 
-
-class QuatroClient (game.GameClient):
+class QuartoClient(game.GameClient):
+    '''Class representing a client for the Quarto game.'''
     def __init__(self, name, server, verbose=False):
-        super().__init__(server, QuatroState, verbose=verbose)
+        super().__init__(server, QuartoState, verbose=verbose)
         self.__name = name
-
-    def _handle (self, message):
+    
+    def _handle(self, message):
         pass
+    
+    def _nextmove(self, state):
+        visible = state._state['visible']
+        move = {}
 
-    def _nextmove (self, state):
-        pass
+        # select the first free position
+        if visible['pieceToPlay'] is not None:
+            move['pos'] = visible['board'].index(None)
+
+        # select the first remaining piece
+        move['nextPiece'] = 0
+
+        # apply the move to check for quarto
+        # applymove will raise if we announce a quarto while there is not
+        move['quarto'] = True
+        try:
+            state.applymove(move)
+        except:
+            del(move['quarto'])
+        
+        # send the move
+        return json.dumps(move)
 
 
 if __name__ == '__main__':
     # Create the top-level parser
-    parser = argparse.ArgumentParser(description='Quatro game')
-    subparsers = parser.add_subparsers(description='server client', help='Quatro game components', dest='component')
+    parser = argparse.ArgumentParser(description='Quarto game')
+    subparsers = parser.add_subparsers(description='server client', help='Quarto game components', dest='component')
     # Create the parser for the 'server' subcommand
     server_parser = subparsers.add_parser('server', help='launch a server')
     server_parser.add_argument('--host', help='hostname (default: localhost)', default='localhost')
@@ -84,6 +190,6 @@ if __name__ == '__main__':
     # Parse the arguments of sys.args
     args = parser.parse_args()
     if args.component == 'server':
-        TicTacToeServer(verbose=args.verbose).run()
+        QuartoServer(verbose=args.verbose).run()
     else:
-        TicTacToeClient(args.name, (args.host, args.port), verbose=args.verbose)
+        QuartoClient(args.name, (args.host, args.port), verbose=args.verbose)

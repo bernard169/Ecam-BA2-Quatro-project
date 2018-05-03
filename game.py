@@ -7,8 +7,9 @@ import copy
 import json
 import socket
 import sys
+import random
 
-DEFAULT_BUFFER_SIZE = 1024
+DEFAULT_BUFFER_SIZE = 2048
 SECTION_WIDTH = 60
 
 
@@ -71,7 +72,7 @@ class GameServer(metaclass=ABCMeta):
         # Stats about the running game
         self.__currentplayer = None
         self.__turns = 0
-        
+
     @property
     def name(self):
         return self.__name
@@ -153,7 +154,8 @@ class GameServer(metaclass=ABCMeta):
         return True
 
     def _gameloop(self):
-        self.__currentplayer = 0
+        random.seed()
+        self.__currentplayer = random.randrange(2)
         winner = -1
         if self.__verbose:
             print(' Initial state:')
