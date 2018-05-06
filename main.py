@@ -165,25 +165,40 @@ class QuartoClient(game.GameClient):
     def _handle(self, message):
         pass
 
-    def isBadPiece (self, state, pieceIndex):
+    def isBadPiece (self, state, pieceIndex, prevMove): #a bad piece makes the oponent win
         stateCopy = copy.deepcopy (state)
-        nextPiece = stateCopy._state['visible']['remainingPieces'][pieceIndex]
+        prevMove = {'pos': prevMove, 'nextPiece':0}
+        stateCopy.applymove (prevMove)
+       # print ('length :', len (stateCopy._state['visible']['remainingPieces']), 'index : ', pieceIndex
+        nextPiece = state._state['visible']['remainingPieces'][pieceIndex]
         for i in range(4):
             elements = [stateCopy._state['visible']['board'][4 * i + e] for e in range(4)]
-            elements[elements.index (None)] = nextPiece
+            try : 
+                elements[elements.index (None)] = nextPiece # put the next piece in an available spot for a combinaison
+            except ValueError : # ValueError is raised if all spots are taken => no None available in the list of elements
+                pass
             if stateCopy._quarto(elements):
                 return True
             elements = [stateCopy._state['visible']['board'][4 * e + i] for e in range(4)]
-            elements[elements.index (None)] = nextPiece
+            try :
+                elements[elements.index (None)] = nextPiece
+            except ValueError :
+                pass
             if stateCopy._quarto(elements):
                 return True
             # Check diagonals
             elements = [stateCopy._state['visible']['board'][5 * e] for e in range(4)]
-            elements[elements.index (None)] = nextPiece
+            try:
+                elements[elements.index (None)] = nextPiece
+            except ValueError :
+                pass
             if stateCopy._quarto(elements):
                 return True
             elements = [stateCopy._state['visible']['board'][3 + 3 * e] for e in range(4)]
-            elements[elements.index (None)] = nextPiece
+            try :
+                elements[elements.index (None)] = nextPiece
+            except ValueError:
+                pass
             if stateCopy._quarto(elements):
                 return True
         del (stateCopy)
@@ -206,11 +221,13 @@ class QuartoClient(game.GameClient):
         # select the first remaining piece that won't let the oponent win
         nbrOfPieces = len(visible['remainingPieces'])
         for p in range (nbrOfPieces):
-            if not self.isBadPiece (state, p):
+            print ('p : ', p,' = ', visible['remainingPieces'][p], self.isBadPiece (state, p, movePos) )
+            if not self.isBadPiece (state, p, movePos):
                 move ['nextPiece'] = p
-            elif (i == nbrOfPieces - 1): # after testing all possible solutions, if none are good moves,
+                break
+            elif (p == nbrOfPieces-1): # after testing all possible solutions, if none are good moves,
                 move ['nextPiece'] = p   # you probably lost => choose the last piece anyway 
-                                         # (it doesn't make a difference whether it's a good or a bad piece)
+                print ('\n','\n', 'no other choice than to get fucked', '\n', '\n')                         # (it doesn't make a difference whether it's a good or a bad piece)
 
         # apply the move to check for quarto
         # applymove will raise if we announce a quarto while there is not
