@@ -207,8 +207,48 @@ class QuartoClient(game.GameClient):
         del (stateCopy)
         return False 
     
-    def winningMove (self, state, pieceToPlay):
-        pass
+    def winningMove (self, state, pieceToPlay): 
+        stateCopy = copy.deepcopy (state) 
+        
+        for i in range(4):
+            #Check lines
+            elements = [stateCopy._state['visible']['board'][4 * i + e] for e in range(4)] 
+            try : 
+                winPos = 4 * i + elements.index (None) # position for the winning move ; if a quarto move is possible,
+                elements[elements.index (None)] = pieceToPlay    # it will be in an empty space of the grid 
+            except ValueError : 
+                pass
+            if stateCopy._quarto(elements):
+                return winPos
+            #Check columns
+            elements = [stateCopy._state['visible']['board'][4 * e + i] for e in range(4)] 
+            try :
+                winPos = 4 * elements.index (None) + i
+                elements[elements.index (None)] = pieceToPlay
+            except ValueError :
+                pass
+            if stateCopy._quarto(elements):
+                return winPos
+            # Check diagonals
+            elements = [stateCopy._state['visible']['board'][5 * e] for e in range(4)]
+            try:
+                winPos = 5 * elements.index (None)
+                elements[elements.index (None)] = pieceToPlay
+            except ValueError :
+                pass
+            if stateCopy._quarto(elements):
+                return winPos
+            elements = [stateCopy._state['visible']['board'][3 + 3 * e] for e in range(4)]
+            try :
+                winPos = 3 + 3 * elements.index (None)
+                elements[elements.index (None)] = pieceToPlay
+            except ValueError:
+                pass
+            if stateCopy._quarto(elements):
+                return winPos
+        del (stateCopy)
+        return None
+                 
 
     
     def _nextmove(self, state):
@@ -218,7 +258,10 @@ class QuartoClient(game.GameClient):
 
         # select the first free position
         if visible['pieceToPlay'] is not None:
-            move['pos'] = visible['board'].index(None)
+            if self.winningMove(state, visible['pieceToPlay']) is not None :
+                move['pos'] = self.winningMove(state, visible['pieceToPlay']) 
+            else : 
+                move['pos'] =  visible['board'].index(None)
             movePos = move['pos']
 
         # select the first remaining piece that won't let the oponent win
