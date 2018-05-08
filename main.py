@@ -136,6 +136,8 @@ class QuartoState(game.GameState):
 
         if state['pieceToPlay'] is not None:
             print('\nPiece to Play:')
+            print ('\n nbrofremaining : ', len (state['remainingPieces']))
+            print ('\n index : ', state['pieceToPlay'])
             print(self.displayPiece(state['remainingPieces'][state['pieceToPlay']]))
 
     def nextPlayer(self):
@@ -166,16 +168,17 @@ class QuartoClient(game.GameClient):
         pass
 
     def isBadPiece (self, state, pieceIndex, prevMove): #a bad piece makes the oponent win
-        stateCopy = copy.deepcopy (state)
-        prevMove = {'pos': prevMove, 'nextPiece':0}
-        stateCopy.applymove (prevMove)
-       # print ('length :', len (stateCopy._state['visible']['remainingPieces']), 'index : ', pieceIndex
+        stateCopy = copy.deepcopy (state) 
+        if (prevMove >=0):                              #allows to take into account the move the player just made
+            prevMove = {'pos': prevMove, 'nextPiece':0}
+            stateCopy.applymove (prevMove)  
+
         nextPiece = state._state['visible']['remainingPieces'][pieceIndex]
         for i in range(4):
             elements = [stateCopy._state['visible']['board'][4 * i + e] for e in range(4)]
             try : 
                 elements[elements.index (None)] = nextPiece # put the next piece in an available spot for a combinaison
-            except ValueError : # ValueError is raised if all spots are taken => no None available in the list of elements
+            except ValueError : # ValueError is raised if no None available in the list of elements => all spots are taken 
                 pass
             if stateCopy._quarto(elements):
                 return True
@@ -225,9 +228,9 @@ class QuartoClient(game.GameClient):
             if not self.isBadPiece (state, p, movePos):
                 move ['nextPiece'] = p
                 break
-            elif (p == nbrOfPieces-1): # after testing all possible solutions, if none are good moves,
+            elif (p == (nbrOfPieces-1)): # after testing all possible solutions, if none are good moves,
                 move ['nextPiece'] = p   # you probably lost => choose the last piece anyway 
-                print ('\n','\n', 'no other choice than to get fucked', '\n', '\n')                         # (it doesn't make a difference whether it's a good or a bad piece)
+                                         # (it doesn't make a difference whether it's a good or a bad piece)
 
         # apply the move to check for quarto
         # applymove will raise if we announce a quarto while there is not
