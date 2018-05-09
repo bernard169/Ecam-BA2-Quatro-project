@@ -167,7 +167,7 @@ class QuartoClient(game.GameClient):
     def _handle(self, message):
         pass
 
-    def isBadPiece (self, state, pieceIndex, prevMove): # a bad piece makes the oponent win
+    def isBadPiece (self, state, pieceIndex, prevMove): # a bad piece lets the oponent win
         stateCopy = copy.deepcopy (state) 
         if (prevMove >=0):                              #allows to take into account the move the player just made
             prevMove = {'pos': prevMove, 'nextPiece':0}
@@ -266,10 +266,26 @@ class QuartoClient(game.GameClient):
             piece = stateCopy._state['visible']['remainingPieces'][pI]      # you need to block the opponent with your move because there
             if self.winningMove (stateCopy, piece) is not None :            # will be no other way than to give a winning piece afterwards
                 dangerousPieces +=1
-                dangerousPos = self.winningMove (stateCopy, piece)          # You can only cover one dangerous position (the last of the loop),f 
+                dangerousPos = self.winningMove (stateCopy, piece)          # You can only cover one dangerous position (the last of the loop),
         if dangerousPieces == nbrOfPieces :                                 # if there are more, you have lost anyway
             return dangerousPos
         
+       ''' firstDiagonal = [0,5,10,15]
+        d1 = 0
+        secondDiagonal = [3,6,9,12]
+        d2 = 0
+        
+
+        for p1,p2 in zip (firstDiagonal, secondDiagonal) :
+            if board[p1] is not None :
+                d1 += 1
+            if board[p2] is not None :
+                d2+=1
+        if d1 == 2 
+
+        safePlaces = [1,2,4,7,8,11,13,14]                                   # spots with least possibles combinations
+'''
+
         del(stateCopy)
         return None 
 
@@ -280,7 +296,7 @@ class QuartoClient(game.GameClient):
         move = {}
         movePos = -1
 
-        # select the first free position
+        # place the piece on the board
         if visible['pieceToPlay'] is not None:
             if self.moveStrategies (state) is not None :
                 move['pos'] = self.moveStrategies (state)
