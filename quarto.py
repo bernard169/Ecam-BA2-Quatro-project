@@ -167,7 +167,7 @@ class QuartoClient(game.GameClient):
     def _handle(self, message):
         pass
 
-    def isBadPiece (self, state, pieceIndex, prevMove): #a bad piece makes the oponent win
+    def isBadPiece (self, state, pieceIndex, prevMove): # a bad piece makes the oponent win
         stateCopy = copy.deepcopy (state) 
         if (prevMove >=0):                              #allows to take into account the move the player just made
             prevMove = {'pos': prevMove, 'nextPiece':0}
@@ -207,7 +207,8 @@ class QuartoClient(game.GameClient):
         del (stateCopy)
         return False 
     
-    def winningMove (self, state, pieceToPlay): 
+    
+    def winningMove (self, state, pieceToPlay): # recognise a move that ends the game
         stateCopy = copy.deepcopy (state) 
         
         for i in range(4):
@@ -248,9 +249,32 @@ class QuartoClient(game.GameClient):
                 return winPos
         del (stateCopy)
         return None
-                 
 
-    
+
+    def moveStrategies (self, state): # homemade strategies
+        stateCopy = copy.deepcopy (state) 
+        pieceToPlay = stateCopy._state['visible']['pieceToPlay']
+        board = stateCopy._state['visible']['board']
+        nbrOfPieces = len (stateCopy._state['visible']['remainingPieces'])
+
+        if self.winningMove(stateCopy, pieceToPlay) is not None :           # First, check if there is a winning move available
+                return self.winningMove(stateCopy, pieceToPlay) 
+
+        dangerousPieces = 0
+        dangerousPos = -1
+        for pI in range (nbrOfPieces):                                      # Then, check if you are in a dangerous situation where 
+            piece = stateCopy._state['visible']['remainingPieces'][pI]      # you need to block the opponent with your move because there
+            if self.winningMove (stateCopy, piece) is not None :            # will be no other way than to give a winning piece afterwards
+                dangerousPieces +=1
+                dangerousPos = self.winningMove (stateCopy, piece)          # You can only cover one dangerous position (the last of the loop),f 
+        if dangerousPieces == nbrOfPieces :                                 # if there are more, you have lost anyway
+            return dangerousPos
+        
+        del(stateCopy)
+        return None 
+
+            
+
     def _nextmove(self, state):
         visible = state._state['visible']
         move = {}
@@ -258,8 +282,8 @@ class QuartoClient(game.GameClient):
 
         # select the first free position
         if visible['pieceToPlay'] is not None:
-            if self.winningMove(state, visible['pieceToPlay']) is not None :
-                move['pos'] = self.winningMove(state, visible['pieceToPlay']) 
+            if self.moveStrategies (state) is not None :
+                move['pos'] = self.moveStrategies (state)
             else : 
                 move['pos'] =  visible['board'].index(None)
             movePos = move['pos']
