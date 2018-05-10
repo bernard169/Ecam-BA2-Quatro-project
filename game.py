@@ -181,7 +181,6 @@ class GameServer(metaclass=ABCMeta):
                     print('   Move:', move)
                 self.applymove(move)
                 self.__turns += 1
-                self._state.nextPlayer()
             except InvalidMoveException as e:
                 if self.__verbose:
                     print('Invalid move:', e)
@@ -190,6 +189,7 @@ class GameServer(metaclass=ABCMeta):
                 print('   State:')
                 self._state.prettyprint()
             winner = self._state.winner()
+            self._state.nextPlayer()
         if self.__verbose:
             _printsection('Game finished')
         # Notify players about won/lost status
