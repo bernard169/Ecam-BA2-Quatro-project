@@ -170,8 +170,8 @@ class QuartoClient(game.GameClient):
     def isBadPiece (self, state, pieceIndex, prevMove): # a bad piece lets the oponent win
         stateCopy = copy.deepcopy (state) 
         if (prevMove >=0):                              #allows to take into account the move the player just made
-            prevMove = {'pos': prevMove, 'nextPiece':0}
-            stateCopy.applymove (prevMove)  
+            move = {'pos': prevMove, 'nextPiece':0 if pieceIndex != 0 else 1}
+            stateCopy.applymove (move)  
 
         nextPiece = state._state['visible']['remainingPieces'][pieceIndex]
         for i in range(4):
@@ -270,7 +270,7 @@ class QuartoClient(game.GameClient):
         if dangerousPieces == nbrOfPieces :                                 # if there are more, you have lost anyway
             return dangerousPos
         
-       ''' firstDiagonal = [0,5,10,15]
+        ''' firstDiagonal = [0,5,10,15]
         d1 = 0
         secondDiagonal = [3,6,9,12]
         d2 = 0
@@ -284,12 +284,37 @@ class QuartoClient(game.GameClient):
         if d1 == 2 
 
         safePlaces = [1,2,4,7,8,11,13,14]                                   # spots with least possibles combinations
-'''
-
+        '''
         del(stateCopy)
         return None 
 
             
+    def choiceStrategies (self, state, prevMove):
+        stateCopy = copy.deepcopy (state)  
+        nbrOfPieces = len(stateCopy._state['visible']['remainingPieces'])
+        goodPiecesIndex = []                                 # list of index for all piece that are not dangerous
+        badPiecesIndex = []
+        for p in range (nbrOfPieces):                   # play only with safe pieces, if possible
+            if not self.isBadPiece (stateCopy, p, prevMove):
+                goodPiecesIndex.append (p)
+            elif (p == (nbrOfPieces-1)) and len (goodPiecesIndex) == 0: # after testing all possible solutions, if none are good moves,
+                return p                                                # you probably lost => choose the last piece anyway 
+            else :                                                      # (it doesn't make a difference whether it's a good or a bad piece)
+                 badPiecesIndex.append (p)                                
+            
+        goodPieces = []             # contains the pieces (str) rather than their index
+        for i in goodPiecesIndex :
+            goodPieces.append(stateCopy._state['visible']['remainingPieces'][i])
+
+        if (prevMove >=0):                                     # allows to take into account the move the player just made
+            move = {'pos': prevMove, 'nextPiece':badPiecesIndex[0] if len(badPiecesIndex) !=0 else 0} # give a bad piece here in order not to influence
+            stateCopy.applymove (move)                                                                # the following choices          
+
+        
+        
+        
+        del (stateCopy)
+        return goodPiecesIndex[0] # if none of the strategies applies, return the first non dangerous piece 
 
     def _nextmove(self, state):
         visible = state._state['visible']
@@ -305,7 +330,12 @@ class QuartoClient(game.GameClient):
             movePos = move['pos']
 
         # select the first remaining piece that won't let the oponent win
-        nbrOfPieces = len(visible['remainingPieces'])
+        if self.choiceStrategies (state, movePos) is not None :
+            move['nextPiece'] = self.choiceStrategies (state, movePos)
+        else : 
+            move['nextPiece'] = 0
+
+        '''nbrOfPieces = len(visible['remainingPieces'])
         for p in range (nbrOfPieces):
             print ('p : ', p,' = ', visible['remainingPieces'][p], self.isBadPiece (state, p, movePos) )
             if not self.isBadPiece (state, p, movePos):
@@ -314,7 +344,7 @@ class QuartoClient(game.GameClient):
             elif (p == (nbrOfPieces-1)): # after testing all possible solutions, if none are good moves,
                 move ['nextPiece'] = p   # you probably lost => choose the last piece anyway 
                                          # (it doesn't make a difference whether it's a good or a bad piece)
-
+'''
         # apply the move to check for quarto
         # applymove will raise if we announce a quarto while there is not
         move['quarto'] = True
