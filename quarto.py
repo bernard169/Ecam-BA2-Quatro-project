@@ -9,7 +9,7 @@ import sys
 import random
 import json
 import copy
-#from simpleai import SearchProblem, greedy
+from easyAI import TwoPlayersGame, Human_Player, AI_Player, Negamax, id_solve
 
 import game
 
@@ -158,7 +158,7 @@ class QuartoServer(game.GameServer):
             self._state.applymove(move)
 
 
-class QuartoClient(game.GameClient):
+class QuartoClient(game.GameClient, TwoPlayersGame):
     '''Class representing a client for the Quarto game.'''
     def __init__(self, name, server, verbose=False):
         super().__init__(server, QuartoState, verbose=verbose)
@@ -250,8 +250,57 @@ class QuartoClient(game.GameClient):
         del (stateCopy)
         return None
 
+    def possible_moves (self, state):
+        visible = state._state['visible']
+        return [{'nextPiece' : i,'pos':j } 
+                    for i in range(len(visible['remainingPieces']))
+                    for j,e in enumerate(visible['board']) if e == None 
+                ]
 
-    def moveStrategies (self, state): # homemade strategies
+    def make_move (self, move, state):
+        pass
+
+    def _nextmove(self, state):
+        visible = state._state['visible']
+        move = {}
+        movePos = -1
+
+        # place the piece on the board
+        if visible['pieceToPlay'] is not None:
+            if self.moveStrategies (state) is not None :
+                move['pos'] = self.moveStrategies (state)
+            else : 
+                move['pos'] =  visible['board'].index(None)
+            movePos = move['pos']
+
+        # select the first remaining piece that won't let the oponent win
+        if self.choiceStrategies (state, movePos) is not None :
+            move['nextPiece'] = self.choiceStrategies (state, movePos)
+        else : 
+            move['nextPiece'] = 0
+
+        '''nbrOfPieces = len(visible['remainingPieces'])
+        for p in range (nbrOfPieces):
+            print ('p : ', p,' = ', visible['remainingPieces'][p], self.isBadPiece (state, p, movePos) )
+            if not self.isBadPiece (state, p, movePos):
+                move ['nextPiece'] = p
+                break
+            elif (p == (nbrOfPieces-1)): # after testing all possible solutions, if none are good moves,
+                move ['nextPiece'] = p   # you probably lost => choose the last piece anyway 
+                                         # (it doesn't make a difference whether it's a good or a bad piece)
+        '''
+        # apply the move to check for quarto
+        # applymove will raise if we announce a quarto while there is not
+        move['quarto'] = True
+        try:
+            state.applymove(move)
+        except:
+            del(move['quarto'])
+        
+        # send the move
+        return json.dumps(move)
+
+    '''def moveStrategies (self, state): # homemade strategies
         stateCopy = copy.deepcopy (state) 
         pieceToPlay = stateCopy._state['visible']['pieceToPlay']
         board = stateCopy._state['visible']['board']
@@ -287,9 +336,9 @@ class QuartoClient(game.GameClient):
         '''
         del(stateCopy)
         return None 
-
+    '''
             
-    def choiceStrategies (self, state, prevMove):
+    '''def choiceStrategies (self, state, prevMove):
         stateCopy = copy.deepcopy (state)  
         nbrOfPieces = len(stateCopy._state['visible']['remainingPieces'])
         goodPiecesIndex = []                                 # list of index for all piece that are not dangerous
@@ -315,46 +364,7 @@ class QuartoClient(game.GameClient):
         
         del (stateCopy)
         return goodPiecesIndex[0] # if none of the strategies applies, return the first non dangerous piece 
-
-    def _nextmove(self, state):
-        visible = state._state['visible']
-        move = {}
-        movePos = -1
-
-        # place the piece on the board
-        if visible['pieceToPlay'] is not None:
-            if self.moveStrategies (state) is not None :
-                move['pos'] = self.moveStrategies (state)
-            else : 
-                move['pos'] =  visible['board'].index(None)
-            movePos = move['pos']
-
-        # select the first remaining piece that won't let the oponent win
-        if self.choiceStrategies (state, movePos) is not None :
-            move['nextPiece'] = self.choiceStrategies (state, movePos)
-        else : 
-            move['nextPiece'] = 0
-
-        '''nbrOfPieces = len(visible['remainingPieces'])
-        for p in range (nbrOfPieces):
-            print ('p : ', p,' = ', visible['remainingPieces'][p], self.isBadPiece (state, p, movePos) )
-            if not self.isBadPiece (state, p, movePos):
-                move ['nextPiece'] = p
-                break
-            elif (p == (nbrOfPieces-1)): # after testing all possible solutions, if none are good moves,
-                move ['nextPiece'] = p   # you probably lost => choose the last piece anyway 
-                                         # (it doesn't make a difference whether it's a good or a bad piece)
-'''
-        # apply the move to check for quarto
-        # applymove will raise if we announce a quarto while there is not
-        move['quarto'] = True
-        try:
-            state.applymove(move)
-        except:
-            del(move['quarto'])
-        
-        # send the move
-        return json.dumps(move)
+        '''
 
 
 if __name__ == '__main__':
