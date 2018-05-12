@@ -9,7 +9,7 @@ import sys
 import random
 import json
 import copy
-#from simpleai import SearchProblem, greedy
+from easyAI import TwoPlayersGame, Human_Player, AI_Player, Negamax
 
 import game
 
@@ -209,7 +209,6 @@ class QuartoClient(game.GameClient):
     
     def winningMove (self, state, pieceToPlay):
         pass
-
     
     def _nextmove(self, state):
         visible = state._state['visible']
