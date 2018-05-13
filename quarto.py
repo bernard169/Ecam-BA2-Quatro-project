@@ -9,7 +9,7 @@ import sys
 import random
 import json
 import copy
-#from simpleai import SearchProblem, greedy
+from easyAI import TwoPlayersGame, Human_Player, AI_Player, Negamax, id_solve
 
 import game
 
@@ -56,6 +56,7 @@ class QuartoState(game.GameState):
                 except game.InvalidMoveException as e:
                     raise e
                 except:
+                    print ('position move : ', move['pos'])
                     raise game.InvalidMoveException("Your move should contain a \"pos\" key in range(16)")
 
             if len(state['remainingPieces']) > 0:
@@ -163,188 +164,16 @@ class QuartoClient(game.GameClient):
     def __init__(self, name, server, verbose=False):
         super().__init__(server, QuartoState, verbose=verbose)
         self.__name = name
-    
+
     def _handle(self, message):
         pass
-
-    def isBadPiece (self, state, pieceIndex, prevMove): # a bad piece lets the oponent win
-        stateCopy = copy.deepcopy (state) 
-        if (prevMove >=0):                              #allows to take into account the move the player just made
-            move = {'pos': prevMove, 'nextPiece':0 if pieceIndex != 0 else 1}
-            stateCopy.applymove (move)  
-
-        nextPiece = state._state['visible']['remainingPieces'][pieceIndex]
-        for i in range(4):
-            elements = [stateCopy._state['visible']['board'][4 * i + e] for e in range(4)]
-            try : 
-                elements[elements.index (None)] = nextPiece # put the next piece in an available spot for a combinaison
-            except ValueError : # ValueError is raised if no None available in the list of elements => all spots are taken 
-                pass
-            if stateCopy._quarto(elements):
-                return True
-            elements = [stateCopy._state['visible']['board'][4 * e + i] for e in range(4)]
-            try :
-                elements[elements.index (None)] = nextPiece
-            except ValueError :
-                pass
-            if stateCopy._quarto(elements):
-                return True
-            # Check diagonals
-            elements = [stateCopy._state['visible']['board'][5 * e] for e in range(4)]
-            try:
-                elements[elements.index (None)] = nextPiece
-            except ValueError :
-                pass
-            if stateCopy._quarto(elements):
-                return True
-            elements = [stateCopy._state['visible']['board'][3 + 3 * e] for e in range(4)]
-            try :
-                elements[elements.index (None)] = nextPiece
-            except ValueError:
-                pass
-            if stateCopy._quarto(elements):
-                return True
-        del (stateCopy)
-        return False 
-    
-    
-    def winningMove (self, state, pieceToPlay): # recognise a move that ends the game
-        stateCopy = copy.deepcopy (state) 
-        
-        for i in range(4):
-            #Check lines
-            elements = [stateCopy._state['visible']['board'][4 * i + e] for e in range(4)] 
-            try : 
-                winPos = 4 * i + elements.index (None) # position for the winning move ; if a quarto move is possible,
-                elements[elements.index (None)] = pieceToPlay    # it will be in an empty space of the grid 
-            except ValueError : 
-                pass
-            if stateCopy._quarto(elements):
-                return winPos
-            #Check columns
-            elements = [stateCopy._state['visible']['board'][4 * e + i] for e in range(4)] 
-            try :
-                winPos = 4 * elements.index (None) + i
-                elements[elements.index (None)] = pieceToPlay
-            except ValueError :
-                pass
-            if stateCopy._quarto(elements):
-                return winPos
-            # Check diagonals
-            elements = [stateCopy._state['visible']['board'][5 * e] for e in range(4)]
-            try:
-                winPos = 5 * elements.index (None)
-                elements[elements.index (None)] = pieceToPlay
-            except ValueError :
-                pass
-            if stateCopy._quarto(elements):
-                return winPos
-            elements = [stateCopy._state['visible']['board'][3 + 3 * e] for e in range(4)]
-            try :
-                winPos = 3 + 3 * elements.index (None)
-                elements[elements.index (None)] = pieceToPlay
-            except ValueError:
-                pass
-            if stateCopy._quarto(elements):
-                return winPos
-        del (stateCopy)
-        return None
-
-
-    def moveStrategies (self, state): # homemade strategies
-        stateCopy = copy.deepcopy (state) 
-        pieceToPlay = stateCopy._state['visible']['pieceToPlay']
-        board = stateCopy._state['visible']['board']
-        nbrOfPieces = len (stateCopy._state['visible']['remainingPieces'])
-
-        if self.winningMove(stateCopy, pieceToPlay) is not None :           # First, check if there is a winning move available
-                return self.winningMove(stateCopy, pieceToPlay) 
-
-        dangerousPieces = 0
-        dangerousPos = -1
-        for pI in range (nbrOfPieces):                                      # Then, check if you are in a dangerous situation where 
-            piece = stateCopy._state['visible']['remainingPieces'][pI]      # you need to block the opponent with your move because there
-            if self.winningMove (stateCopy, piece) is not None :            # will be no other way than to give a winning piece afterwards
-                dangerousPieces +=1
-                dangerousPos = self.winningMove (stateCopy, piece)          # You can only cover one dangerous position (the last of the loop),
-        if dangerousPieces == nbrOfPieces :                                 # if there are more, you have lost anyway
-            return dangerousPos
-        
-        ''' firstDiagonal = [0,5,10,15]
-        d1 = 0
-        secondDiagonal = [3,6,9,12]
-        d2 = 0
-        
-
-        for p1,p2 in zip (firstDiagonal, secondDiagonal) :
-            if board[p1] is not None :
-                d1 += 1
-            if board[p2] is not None :
-                d2+=1
-        if d1 == 2 
-
-        safePlaces = [1,2,4,7,8,11,13,14]                                   # spots with least possibles combinations
-        '''
-        del(stateCopy)
-        return None 
-
-            
-    def choiceStrategies (self, state, prevMove):
-        stateCopy = copy.deepcopy (state)  
-        nbrOfPieces = len(stateCopy._state['visible']['remainingPieces'])
-        goodPiecesIndex = []                                 # list of index for all piece that are not dangerous
-        badPiecesIndex = []
-        for p in range (nbrOfPieces):                   # play only with safe pieces, if possible
-            if not self.isBadPiece (stateCopy, p, prevMove):
-                goodPiecesIndex.append (p)
-            elif (p == (nbrOfPieces-1)) and len (goodPiecesIndex) == 0: # after testing all possible solutions, if none are good moves,
-                return p                                                # you probably lost => choose the last piece anyway 
-            else :                                                      # (it doesn't make a difference whether it's a good or a bad piece)
-                 badPiecesIndex.append (p)                                
-            
-        goodPieces = []             # contains the pieces (str) rather than their index
-        for i in goodPiecesIndex :
-            goodPieces.append(stateCopy._state['visible']['remainingPieces'][i])
-
-        if (prevMove >=0):                                     # allows to take into account the move the player just made
-            move = {'pos': prevMove, 'nextPiece':badPiecesIndex[0] if len(badPiecesIndex) !=0 else 0} # give a bad piece here in order not to influence
-            stateCopy.applymove (move)                                                                # the following choices          
-
-        
-        
-        
-        del (stateCopy)
-        return goodPiecesIndex[0] # if none of the strategies applies, return the first non dangerous piece 
 
     def _nextmove(self, state):
         visible = state._state['visible']
         move = {}
-        movePos = -1
-
-        # place the piece on the board
-        if visible['pieceToPlay'] is not None:
-            if self.moveStrategies (state) is not None :
-                move['pos'] = self.moveStrategies (state)
-            else : 
-                move['pos'] =  visible['board'].index(None)
-            movePos = move['pos']
-
-        # select the first remaining piece that won't let the oponent win
-        if self.choiceStrategies (state, movePos) is not None :
-            move['nextPiece'] = self.choiceStrategies (state, movePos)
-        else : 
-            move['nextPiece'] = 0
-
-        '''nbrOfPieces = len(visible['remainingPieces'])
-        for p in range (nbrOfPieces):
-            print ('p : ', p,' = ', visible['remainingPieces'][p], self.isBadPiece (state, p, movePos) )
-            if not self.isBadPiece (state, p, movePos):
-                move ['nextPiece'] = p
-                break
-            elif (p == (nbrOfPieces-1)): # after testing all possible solutions, if none are good moves,
-                move ['nextPiece'] = p   # you probably lost => choose the last piece anyway 
-                                         # (it doesn't make a difference whether it's a good or a bad piece)
-'''
+    
+        history = QuartoIA(state).play()
+        move = history[0][1]
         # apply the move to check for quarto
         # applymove will raise if we announce a quarto while there is not
         move['quarto'] = True
@@ -355,9 +184,104 @@ class QuartoClient(game.GameClient):
         
         # send the move
         return json.dumps(move)
+            
 
+class QuartoIA (TwoPlayersGame) : 
+    def __init__ (self, state):
+        ai_algo = Negamax (2)
+        self.players = [AI_Player(ai_algo), AI_Player(ai_algo)]
+        self.__state = copy.deepcopy (state)
+        self.board = self.__state._state['visible']['board'] 
+        self.nplayer = self.__state._state['currentPlayer'] + 1
 
-if __name__ == '__main__':
+    def make_move (self, move):
+        state =  self.__state._state['visible']
+        '''if state['pieceToPlay'] is not None :
+            print (len(state['remainingPieces']),state['pieceToPlay'])
+            self.board[move['pos']] = state['remainingPieces'][state['pieceToPlay']]
+        state['pieceToPlay'] = move['nextPiece']'''
+        self.__state.applymove (move)
+
+    def lose (self):
+        # Check horizontal and vertical lines
+        for i in range(4):
+            if self.__state._quarto([self.board[4 * i + e] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent :
+                return True
+            if self.__state._quarto([self.board[4 * e + i] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent :
+                return True
+        # Check diagonals
+        if self.__state._quarto([self.board[5 * e] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent:
+            return True
+        if self.__state._quarto([self.board[3 + 3 * e] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent:
+            return True
+        return False
+    
+    def is_over (self) :
+        return self.possible_moves == [] or self.lose()
+     
+    def scoring (self):
+        return -100 if self.lose() else 0
+
+    def possible_moves (self):
+        visible = self.__state._state['visible']
+        if self.__state._state['visible']['pieceToPlay'] is not None :
+            return [{'nextPiece' : i,'pos':j } 
+                        for i in range(len(visible['remainingPieces']))
+                        for j,e in enumerate(visible['board']) if e == None ]
+        else :
+            return [{'nextPiece' : i} 
+                        for i in range(len(visible['remainingPieces']))]
+    
+    def show (self):
+        pass
+
+class QuartoGame (TwoPlayersGame) : 
+    def __init__ (self, players):
+        self.players = players
+        self.board = self.__state._state['visible']['board'] 
+        self.nplayer = self.__state._state['currentPlayer'] + 1
+
+    def make_move (self, move):
+        state =  self.__state._state['visible']
+        if state['pieceToPlay'] is not None :
+            self.board[move['pos']] = state['remainingPieces'][state['pieceToPlay']]
+        state['pieceToPlay'] = move['nextPiece']
+        del state['remainingPieces'][state['pieceToPlay']]
+
+    def lose (self):
+        # Check horizontal and vertical lines
+        for i in range(4):
+            if self.__state._quarto([self.board[4 * i + e] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent :
+                return True
+            if self.__state._quarto([self.board[4 * e + i] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent :
+                return True
+        # Check diagonals
+        if self.__state._quarto([self.board[5 * e] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent:
+            return True
+        if self.__state._quarto([self.board[3 + 3 * e] for e in range(4)]) and self.__state._state['currentPlayer'] + 1 == self.nopponent:
+            return True
+        return False
+    
+    def is_over (self) :
+        return self.possible_moves == [] or self.lose()
+     
+    def scoring (self):
+        return -100 if self.lose() else 0
+
+    def possible_moves (self):
+        visible = self.__state._state['visible']
+        if self.__state._state['visible']['pieceToPlay'] is not None :
+            return [{'nextPiece' : i,'pos':j } 
+                        for i in range(len(visible['remainingPieces']))
+                        for j,e in enumerate(visible['board']) if e == None ]
+        else :
+            return [{'nextPiece' : i} 
+                        for i in range(len(visible['remainingPieces']))]
+    
+    def show (self):
+        pass
+
+if __name__ == '__main__' :
     # Create the top-level parser
     parser = argparse.ArgumentParser(description='Quarto game')
     subparsers = parser.add_subparsers(description='server client', help='Quarto game components', dest='component')
