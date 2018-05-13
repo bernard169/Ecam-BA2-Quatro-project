@@ -171,9 +171,8 @@ class QuartoClient(game.GameClient):
     def _nextmove(self, state):
         visible = state._state['visible']
         move = {}
-    
-        history = QuartoIA(state).play()
-        move = history[0][1]
+
+        move = QuartoIA (state).get_move()
         # apply the move to check for quarto
         # applymove will raise if we announce a quarto while there is not
         move['quarto'] = True
@@ -192,7 +191,7 @@ class QuartoIA (TwoPlayersGame) :
         self.players = [AI_Player(ai_algo), AI_Player(ai_algo)]
         self.__state = copy.deepcopy (state)
         self.board = self.__state._state['visible']['board'] 
-        self.nplayer = self.__state._state['currentPlayer'] + 1
+        self.nplayer = self.__state._state['currentPlayer'] + 1 # first player is the current player (+1 because using different index; 1-2 instead of 0-1)
 
     def make_move (self, move):
         state =  self.__state._state['visible']
@@ -217,7 +216,7 @@ class QuartoIA (TwoPlayersGame) :
         return False
     
     def is_over (self) :
-        return self.possible_moves == [] or self.lose()
+        return self.possible_moves() == [] or self.lose()
      
     def scoring (self):
         return -100 if self.lose() else 0
