@@ -170,7 +170,7 @@ class QuartoClient(game.GameClient):
         move = {}
 
         QuartoIA.ttentry = lambda self: state
-        ai_algo = Negamax (16, win_score=84, tt= TT())
+        ai_algo = Negamax (16, win_score=83, tt= TT())
         quarto = QuartoIA (state, [AI_Player(ai_algo), AI_Player(ai_algo)])
         move = quarto.get_move()
         del (quarto)
