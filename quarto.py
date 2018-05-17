@@ -186,7 +186,7 @@ class QuartoClient(game.GameClient):
         return json.dumps(move)
             
 
-class QuartoIA (TwoPlayersGame) : 
+class QuartoIA (TwoPlayersGame) :   # mostly using the quartoState class to check the state and other function
     def __init__ (self, state, players):
         self.__state = copy.deepcopy (state)
         self.players = players
@@ -196,8 +196,8 @@ class QuartoIA (TwoPlayersGame) :
         try: 
             self.__state.applymove (move)
         except :
-            del(move['quarto'])
-        self.__state.nextPlayer()
+            del(move['quarto']) # same as in the client class, an error will raise if there is no quarto
+        self.__state.nextPlayer()  
 
     def win (self):
         return self.__state.winner() is not (None or -1)    # == (self.nplayer if self.nplayer < 2 else self.nplayer -1) 
@@ -219,12 +219,12 @@ class QuartoIA (TwoPlayersGame) :
     def possible_moves (self):
         visible = self.__state._state['visible']
         if self.__state._state['visible']['pieceToPlay'] is not None :
-            if (len(self.__state._state['visible']['remainingPieces']) <= 1) :
+            if (len(self.__state._state['visible']['remainingPieces']) <= 1) :  # place the last piece remaining
                 return [{'nextPiece' : None, 'pos': visible['board'].index (None), 'quarto' : True}]
-            elif  (len(self.__state._state['visible']['remainingPieces'])==16):
+            elif  (len(self.__state._state['visible']['remainingPieces'])==16): # the first position for the first piece is 3, to build a nice looking game
                 return [{'nextPiece' : i,'pos':3} 
                         for i in range(len(visible['remainingPieces'])-1)]
-           ''' elif (len(self.__state._state['visible']['remainingPieces'])==15):
+            ''' elif (len(self.__state._state['visible']['remainingPieces'])==15):
                 if self.__state._state['visible']['board'][9] is None :
                     return [{'nextPiece' : i,'pos':9} 
                         for i in range(len(visible['remainingPieces'])-1)]
@@ -235,7 +235,7 @@ class QuartoIA (TwoPlayersGame) :
             return [{'nextPiece' : i,'pos':j, 'quarto' : True} 
                         for i in range(len(visible['remainingPieces'])-1)
                         for j,e in enumerate(visible['board']) if e == None ]
-        else :
+        else :  # first move of the first player, he must not choose a position, only a piece
             return [{'nextPiece' : i} 
                         for i in range(len(visible['remainingPieces']))]
     
