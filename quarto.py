@@ -170,7 +170,7 @@ class QuartoClient(game.GameClient):
         move = {}
 
         QuartoIA.ttentry = lambda self: state
-        ai_algo = Negamax (16, win_score=83, tt= TT()) #creates negamax algorithm with depth of 16 and a transition table
+        ai_algo = Negamax (16, tt= TT()) #creates negamax algorithm with depth of 16 and a transition table
         quarto = QuartoIA (state, [AI_Player(ai_algo), AI_Player(ai_algo)])
         move = quarto.get_move()    # asks the algo to send the best move possible in the current situation (state)
         del (quarto)
@@ -222,8 +222,7 @@ class QuartoIA (TwoPlayersGame) :   # mostly using the quartoState class to chec
             if (len(self.__state._state['visible']['remainingPieces']) <= 1) :  # place the last piece remaining
                 return [{'nextPiece' : None, 'pos': visible['board'].index (None), 'quarto' : True}]
             elif  (len(self.__state._state['visible']['remainingPieces'])==16): # the first position for the first piece is 3, to build a nice looking game
-                return [{'nextPiece' : i,'pos':3} 
-                        for i in range(len(visible['remainingPieces'])-1)]
+                return [{'nextPiece' : 14,'pos':15} ]
             ''' elif (len(self.__state._state['visible']['remainingPieces'])==15):
                 if self.__state._state['visible']['board'][9] is None :
                     return [{'nextPiece' : i,'pos':9} 
@@ -231,7 +230,7 @@ class QuartoIA (TwoPlayersGame) :   # mostly using the quartoState class to chec
                 else :
                     return [{'nextPiece' : i,'pos':self.__state._state['visible']['board'].index (None)} 
                             for i in range(len(visible['remainingPieces'])-1)]
-            '''
+                         '''
             return [{'nextPiece' : i,'pos':j, 'quarto' : True} 
                         for i in range(len(visible['remainingPieces'])-1)
                         for j,e in enumerate(visible['board']) if e == None ]
