@@ -224,14 +224,14 @@ class QuartoIA (TwoPlayersGame) :
             elif  (len(self.__state._state['visible']['remainingPieces'])==16):
                 return [{'nextPiece' : i,'pos':3} 
                         for i in range(len(visible['remainingPieces'])-1)]
-            elif (len(self.__state._state['visible']['remainingPieces'])==15):
+           ''' elif (len(self.__state._state['visible']['remainingPieces'])==15):
                 if self.__state._state['visible']['board'][9] is None :
                     return [{'nextPiece' : i,'pos':9} 
                         for i in range(len(visible['remainingPieces'])-1)]
                 else :
                     return [{'nextPiece' : i,'pos':self.__state._state['visible']['board'].index (None)} 
                             for i in range(len(visible['remainingPieces'])-1)]
-
+            '''
             return [{'nextPiece' : i,'pos':j, 'quarto' : True} 
                         for i in range(len(visible['remainingPieces'])-1)
                         for j,e in enumerate(visible['board']) if e == None ]
