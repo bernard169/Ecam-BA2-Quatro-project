@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # quarto.py
-# Author: Quentin Lurkin; IA edited by Bernard Tourneur & Jonathan Miel
+# Author: Quentin Lurkin; AI edited by Bernard Tourneur & Jonathan Miel
 # Version: March 29, 2018
 
 import argparse
@@ -170,9 +170,9 @@ class QuartoClient(game.GameClient):
         move = {}
 
         QuartoIA.ttentry = lambda self: state
-        ai_algo = Negamax (16, win_score=83, tt= TT())
+        ai_algo = Negamax (16, win_score=83, tt= TT()) #creates negamax algorithm with depth of 16 and a transition table
         quarto = QuartoIA (state, [AI_Player(ai_algo), AI_Player(ai_algo)])
-        move = quarto.get_move()
+        move = quarto.get_move()    # asks the algo to send the best move possible in the current situation (state)
         del (quarto)
         # apply the move to check for quarto
         # applymove will raise if we announce a quarto while there is not
