@@ -170,7 +170,7 @@ class QuartoClient(game.GameClient):
         move = {}
 
         QuartoIA.ttentry = lambda self: state
-        ai_algo = Negamax (16, tt= TT()) #creates negamax algorithm with depth of 16 and a transition table
+        ai_algo = Negamax (6, tt= TT()) #creates negamax algorithm with depth of 16 and a transition table
         quarto = QuartoIA (state, [AI_Player(ai_algo), AI_Player(ai_algo)])
         move = quarto.get_move()    # asks the algo to send the best move possible in the current situation (state)
         del (quarto)
