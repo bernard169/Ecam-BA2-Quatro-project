@@ -9,9 +9,10 @@ import sys
 import random
 import json
 import copy
-from lib.easyAI import TwoPlayersGame, Human_Player, AI_Player, Negamax, id_solve, TT
+#from lib.easyAI import TwoPlayersGame, Human_Player, AI_Player, Negamax, id_solve, TT
+from easyAI import TwoPlayersGame, Human_Player, AI_Player, Negamax, id_solve, TT
 
-import game
+from lib import  game
 
 class QuartoState(game.GameState):
     '''Class representing a state for the Quarto game.'''
@@ -209,9 +210,7 @@ class QuartoIA (TwoPlayersGame) :   # mostly using the quartoState class to chec
         return self.possible_moves() == [] or self.win()
      
     def scoring (self):
-        if self.lose() :
-            return -100
-        elif self.win():
+        if self.win():
             return 100
         else :
             return 0
@@ -223,14 +222,7 @@ class QuartoIA (TwoPlayersGame) :   # mostly using the quartoState class to chec
                 return [{'nextPiece' : None, 'pos': visible['board'].index (None), 'quarto' : True}]
             elif  (len(self.__state._state['visible']['remainingPieces'])==16): # the first position for the first piece is 3, to build a nice looking game
                 return [{'nextPiece' : 14,'pos':15} ]
-            ''' elif (len(self.__state._state['visible']['remainingPieces'])==15):
-                if self.__state._state['visible']['board'][9] is None :
-                    return [{'nextPiece' : i,'pos':9} 
-                        for i in range(len(visible['remainingPieces'])-1)]
-                else :
-                    return [{'nextPiece' : i,'pos':self.__state._state['visible']['board'].index (None)} 
-                            for i in range(len(visible['remainingPieces'])-1)]
-                         '''
+            
             return [{'nextPiece' : i,'pos':j, 'quarto' : True} 
                         for i in range(len(visible['remainingPieces'])-1)
                         for j,e in enumerate(visible['board']) if e == None ]
